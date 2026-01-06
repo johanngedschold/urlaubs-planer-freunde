@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urlaubs-Planer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .navigation {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .navigation a {
+            color: #2196F3;
+            text-decoration: none;
+        }
+
+        .navigation a:hover {
+            text-decoration: underline;
+        }
+
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .box h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+            margin-top: 15px;
+        }
+
+        label:first-child {
+            margin-top: 0;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+
+        input:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .button-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .button-primary:hover {
+            background: #45a049;
+        }
+
+        .button-secondary {
+            background: #2196F3;
+            color: white;
+        }
+
+        .button-secondary:hover {
+            background: #1976D2;
+        }
+
+        .meldung {
+            text-align: center;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .meldung.sichtbar {
+            display: block;
+        }
+
+        .meldung.erfolg {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .meldung.fehler {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            background: #eee;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: #ddd;
+        }
+
+        .tab.aktiv {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .versteckt {
+            display: none;
+        }
+
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .user-name {
+            font-size: 18px;
+            color: #333;
+        }
+
+        .logout-button {
+            padding: 8px 15px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .logout-button:hover {
+            background: #d32f2f;
+        }
+
+        .kalender {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .kalender-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .kalender-header button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .kalender-header button:hover {
+            background: #45a049;
+        }
+
+        .wochentage {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .tage {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+        }
+
+        .tag {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+
+        .tag:hover {
+            background-color: #e8f5e9;
+        }
+
+        .tag.ausgewaehlt {
+            background-color: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .tag.start-datum {
+            background-color: #FF9800;
+            color: white;
+            border-color: #FF9800;
+        }
+
+        .tag.leer {
+            border: none;
+            cursor: default;
+        }
+
+        .tag.leer:hover {
+            background: none;
+        }
+
+        .zaehler {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .zaehler strong {
+            color: #4CAF50;
+        }
+
+        .hinweis {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .hinweis.zeitraum-aktiv {
+            color: #FF9800;
+            font-weight: bold;
+        }
+
+        .button-leiste {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .reset-button {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .reset-button:hover {
+            background: #d32f2f;
+        }
+
+        .speichern-button {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .speichern-button:hover {
+            background: #1976D2;
+        }
+
+        .aktuelle-auswahl {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        .aktuelle-auswahl h3 {
+            margin: 0 0 10px 0;
+            color: #2e7d32;
+            font-size: 14px;
+        }
+
+        .aktuelle-auswahl p {
+            margin: 0;
+            color: #333;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<!-- Subtiler Admin-Link im Footer -->
+<div style="text-align: center; margin-top: 50px; padding: 20px; border-top: 1px solid #eee;">
+    <a href="/admin" style="color: #999; font-size: 12px; text-decoration: none; opacity: 0.7;" title="Admin">⚙️ Admin</a>
+</div>
+
+<body>
+    <h1>🏖️ Urlaubs-Planer</h1>
+
+    <div class="navigation">
+        <a href="/uebersicht.html">📊 Zur Übersicht →</a>
+    </div>
+
+    <!-- LOGIN BEREICH -->
+    <div id="login-bereich">
+        <div class="box">
+            <div class="tabs">
+                <div class="tab aktiv" id="tab-login" onclick="zeigeLogin()">🔓 Anmelden</div>
+                <div class="tab" id="tab-register" onclick="zeigeRegister()">📝 Registrieren</div>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form">
+                <label for="login-name">Name:</label>
+                <input type="text" id="login-name" placeholder="Dein Name">
+
+                <label for="login-passwort">Passwort:</label>
+                <input type="password" id="login-passwort" placeholder="Dein Passwort">
+
+                <button class="button button-primary" onclick="login()">🔓 Anmelden</button>
+
+                <div class="meldung" id="login-meldung"></div>
+            </div>
+
+            <!-- Register Form -->
+            <div id="register-form" class="versteckt">
+                <label for="register-name">Name:</label>
+                <input type="text" id="register-name" placeholder="Wähle einen Namen">
+
+                <label for="register-passwort">Passwort:</label>
+                <input type="password" id="register-passwort" placeholder="Min. 4 Zeichen">
+
+                <label for="register-passwort2">Passwort wiederholen:</label>
+                <input type="password" id="register-passwort2" placeholder="Passwort bestätigen">
+
+                <button class="button button-secondary" onclick="registrieren()">📝 Registrieren</button>
+
+                <div class="meldung" id="register-meldung"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EINGELOGGT BEREICH -->
+    <div id="eingeloggt-bereich" class="versteckt">
+        <div class="box">
+            <div class="user-header">
+                <span class="user-name">👋 Hallo, <strong id="user-name-display"></strong>!</span>
+                <button class="logout-button" onclick="logout()">Abmelden</button>
+            </div>
+
+            <div class="aktuelle-auswahl" id="aktuelle-auswahl">
+                <h3>📅 Deine aktuelle Auswahl:</h3>
+                <p id="aktuelle-tage-text">Noch keine Tage ausgewählt</p>
+            </div>
+
+            <div class="meldung" id="kalender-meldung"></div>
+        </div>
+
+        <div class="kalender">
+            <div class="kalender-header">
+                <button onclick="vorherigerMonat()">← Zurück</button>
+                <h2 id="monat-anzeige">Januar 2026</h2>
+                <button onclick="naechsterMonat()">Weiter →</button>
+            </div>
+
+            <div class="wochentage">
+                <span>Mo</span>
+                <span>Di</span>
+                <span>Mi</span>
+                <span>Do</span>
+                <span>Fr</span>
+                <span>Sa</span>
+                <span>So</span>
+            </div>
+
+            <div class="tage" id="tage-container"></div>
+
+            <div class="zaehler" id="zaehler">
+                <strong>0</strong> Tage ausgewählt
+            </div>
+
+            <p class="hinweis" id="hinweis">
+                💡 Klicke auf Start, dann auf Ende → Zeitraum wird markiert
+            </p>
+
+            <div class="button-leiste">
+                <button class="reset-button" onclick="alleZuruecksetzen()">🗑️ Alle abwählen</button>
+            </div>
+        </div>
+
+        <button class="speichern-button" onclick="speichern()">
+            ✅ Verfügbarkeit speichern
+        </button>
+    </div>
+
+    <script>
+        // Variablen
+        let aktuellerMonat = new Date().getMonth();
+        let aktuellesJahr = new Date().getFullYear();
+        let ausgewaehlteTage = [];
+        let startDatum = null;
+        let eingeloggterNutzer = null;
+
+        const monate = [
+            'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+            'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+        ];
+
+        // ===== LOGIN IM BROWSER SPEICHERN =====
+        function speichereLogin(nutzer) {
+            localStorage.setItem('urlaubsplaner_nutzer', JSON.stringify(nutzer));
+        }
+
+        function ladeGespeichertenLogin() {
+            const gespeichert = localStorage.getItem('urlaubsplaner_nutzer');
+            if (gespeichert) {
+                return JSON.parse(gespeichert);
+            }
+            return null;
+        }
+
+        function loescheGespeichertenLogin() {
+            localStorage.removeItem('urlaubsplaner_nutzer');
+        }
+
+        // ===== BEIM LADEN DER SEITE PRÜFEN =====
+        function pruefeLogin() {
+            const gespeicherterNutzer = ladeGespeichertenLogin();
+            if (gespeicherterNutzer) {
+                // Nutzer-Daten vom Server holen (für aktuelle Verfügbarkeit)
+                fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name: gespeicherterNutzer.name, 
+                        passwort: gespeicherterNutzer.passwort 
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.erfolg) {
+                        eingeloggterNutzer = data.nutzer;
+                        ausgewaehlteTage = data.nutzer.verfuegbarkeit || [];
+                        zeigeEingeloggt();
+                    } else {
+                        // Login nicht mehr gültig, löschen
+                        loescheGespeichertenLogin();
+                    }
+                })
+                .catch(() => {
+                    loescheGespeichertenLogin();
+                });
+            }
+        }
+
+        // Tab-Wechsel
+        function zeigeLogin() {
+            document.getElementById('tab-login').classList.add('aktiv');
+            document.getElementById('tab-register').classList.remove('aktiv');
+            document.getElementById('login-form').classList.remove('versteckt');
+            document.getElementById('register-form').classList.add('versteckt');
+        }
+
+        function zeigeRegister() {
+            document.getElementById('tab-login').classList.remove('aktiv');
+            document.getElementById('tab-register').classList.add('aktiv');
+            document.getElementById('login-form').classList.add('versteckt');
+            document.getElementById('register-form').classList.remove('versteckt');
+        }
+
+        // Meldung anzeigen
+        function zeigeMeldung(elementId, text, istFehler) {
+            const meldung = document.getElementById(elementId);
+            meldung.textContent = text;
+            meldung.className = 'meldung sichtbar ' + (istFehler ? 'fehler' : 'erfolg');
+        }
+
+        // Registrierung
+        function registrieren() {
+            const name = document.getElementById('register-name').value.trim();
+            const passwort = document.getElementById('register-passwort').value;
+            const passwort2 = document.getElementById('register-passwort2').value;
+
+            if (!name) {
+                zeigeMeldung('register-meldung', '❌ Bitte gib einen Namen ein!', true);
+                return;
+            }
+
+            if (passwort.length < 4) {
+                zeigeMeldung('register-meldung', '❌ Passwort muss mindestens 4 Zeichen haben!', true);
+                return;
+            }
+
+            if (passwort !== passwort2) {
+                zeigeMeldung('register-meldung', '❌ Passwörter stimmen nicht überein!', true);
+                return;
+            }
+
+            fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, passwort })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.erfolg) {
+                    zeigeMeldung('register-meldung', '✅ Registrierung erfolgreich!', false);
+                    setTimeout(() => {
+                        document.getElementById('login-name').value = name;
+                        zeigeLogin();
+                    }, 1000);
+                } else {
+                    zeigeMeldung('register-meldung', '❌ ' + data.fehler, true);
+                }
+            })
+            .catch(() => {
+                zeigeMeldung('register-meldung', '❌ Verbindungsfehler!', true);
+            });
+        }
+
+        // Login
+        function login() {
+            const name = document.getElementById('login-name').value.trim();
+            const passwort = document.getElementById('login-passwort').value;
+
+            if (!name || !passwort) {
+                zeigeMeldung('login-meldung', '❌ Bitte fülle alle Felder aus!', true);
+                return;
+            }
+
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, passwort })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.erfolg) {
+                    eingeloggterNutzer = data.nutzer;
+                    ausgewaehlteTage = data.nutzer.verfuegbarkeit || [];
+                    
+                    // Login im Browser speichern
+                    speichereLogin({ name: name, passwort: passwort });
+                    
+                    zeigeEingeloggt();
+                } else {
+                    zeigeMeldung('login-meldung', '❌ ' + data.fehler, true);
+                }
+            })
+            .catch(() => {
+                zeigeMeldung('login-meldung', '❌ Verbindungsfehler!', true);
+            });
+        }
+
+        // Eingeloggt-Ansicht zeigen
+        function zeigeEingeloggt() {
+            document.getElementById('login-bereich').classList.add('versteckt');
+            document.getElementById('eingeloggt-bereich').classList.remove('versteckt');
+            document.getElementById('user-name-display').textContent = eingeloggterNutzer.name;
+            aktualisiereAktuelleAuswahl();
+            zeichneKalender();
+            aktualisiereZaehler();
+        }
+
+        // Logout
+        function logout() {
+            eingeloggterNutzer = null;
+            ausgewaehlteTage = [];
+            startDatum = null;
+            
+            // Login aus Browser löschen
+            loescheGespeichertenLogin();
+            
+            document.getElementById('login-bereich').classList.remove('versteckt');
+            document.getElementById('eingeloggt-bereich').classList.add('versteckt');
+            document.getElementById('login-passwort').value = '';
+        }
+
+        // Aktuelle Auswahl anzeigen
+        function aktualisiereAktuelleAuswahl() {
+            const text = document.getElementById('aktuelle-tage-text');
+            if (ausgewaehlteTage.length === 0) {
+                text.textContent = 'Noch keine Tage ausgewählt';
+            } else {
+                text.textContent = fasseZeitraeumeZusammen(ausgewaehlteTage);
+            }
+        }
+
+        // Zeiträume zusammenfassen
+        function fasseZeitraeumeZusammen(tage) {
+            if (tage.length === 0) return 'Keine Tage ausgewählt';
+            
+            const sortiert = [...tage].sort();
+            const bereiche = [];
+            let start = sortiert[0];
+            let ende = sortiert[0];
+            
+            for (let i = 1; i < sortiert.length; i++) {
+                const aktuell = new Date(sortiert[i]);
+                const vorher = new Date(sortiert[i - 1]);
+                const differenz = (aktuell - vorher) / (1000 * 60 * 60 * 24);
+                
+                if (differenz === 1) {
+                    ende = sortiert[i];
+                } else {
+                    bereiche.push(formatiereBereich(start, ende));
+                    start = sortiert[i];
+                    ende = sortiert[i];
+                }
+            }
+            
+            bereiche.push(formatiereBereich(start, ende));
+            return bereiche.join(', ');
+        }
+
+        function formatiereBereich(start, ende) {
+            const s = new Date(start);
+            const e = new Date(ende);
+            const startStr = s.getDate() + '.' + (s.getMonth() + 1) + '.';
+            const endeStr = e.getDate() + '.' + (e.getMonth() + 1) + '.';
+            return start === ende ? startStr : startStr + ' - ' + endeStr;
+        }
+
+        // Zähler aktualisieren
+        function aktualisiereZaehler() {
+            document.getElementById('zaehler').innerHTML = 
+                '<strong>' + ausgewaehlteTage.length + '</strong> Tage ausgewählt';
+        }
+
+        function aktualisiereHinweis() {
+            const hinweis = document.getElementById('hinweis');
+            if (startDatum) {
+                hinweis.textContent = '🟠 Jetzt Enddatum wählen...';
+                hinweis.className = 'hinweis zeitraum-aktiv';
+            } else {
+                hinweis.textContent = '💡 Klicke auf Start, dann auf Ende → Zeitraum wird markiert';
+                hinweis.className = 'hinweis';
+            }
+        }
+
+        // Kalender zeichnen
+        function zeichneKalender() {
+            const container = document.getElementById('tage-container');
+            const anzeige = document.getElementById('monat-anzeige');
+            
+            anzeige.textContent = monate[aktuellerMonat] + ' ' + aktuellesJahr;
+            container.innerHTML = '';
+            
+            const ersterTag = new Date(aktuellesJahr, aktuellerMonat, 1);
+            let startTag = ersterTag.getDay() - 1;
+            if (startTag < 0) startTag = 6;
+            
+            const anzahlTage = new Date(aktuellesJahr, aktuellerMonat + 1, 0).getDate();
+            
+            for (let i = 0; i < startTag; i++) {
+                const leer = document.createElement('div');
+                leer.className = 'tag leer';
+                container.appendChild(leer);
+            }
+            
+            for (let tag = 1; tag <= anzahlTage; tag++) {
+                const tagElement = document.createElement('div');
+                tagElement.className = 'tag';
+                tagElement.textContent = tag;
+                
+                const datumString = aktuellesJahr + '-' + 
+                    String(aktuellerMonat + 1).padStart(2, '0') + '-' + 
+                    String(tag).padStart(2, '0');
+                
+                if (ausgewaehlteTage.includes(datumString)) {
+                    tagElement.classList.add('ausgewaehlt');
+                }
+
+                if (startDatum === datumString) {
+                    tagElement.classList.add('start-datum');
+                }
+                
+                tagElement.onclick = function() {
+                    tagKlick(datumString, tagElement);
+                };
+                
+                container.appendChild(tagElement);
+            }
+        }
+
+        function waehleZeitraum(start, ende) {
+            const startDate = new Date(start);
+            const endDate = new Date(ende);
+            
+            if (endDate < startDate) {
+                const temp = new Date(startDate);
+                startDate.setTime(endDate.getTime());
+                endDate.setTime(temp.getTime());
+            }
+            
+            const aktuellesDatum = new Date(startDate);
+            while (aktuellesDatum <= endDate) {
+                const datumString = aktuellesDatum.getFullYear() + '-' + 
+                    String(aktuellesDatum.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(aktuellesDatum.getDate()).padStart(2, '0');
+                
+                if (!ausgewaehlteTage.includes(datumString)) {
+                    ausgewaehlteTage.push(datumString);
+                }
+                
+                aktuellesDatum.setDate(aktuellesDatum.getDate() + 1);
+            }
+        }
+
+        function tagKlick(datum, element) {
+            if (ausgewaehlteTage.includes(datum) && startDatum !== datum) {
+                ausgewaehlteTage = ausgewaehlteTage.filter(d => d !== datum);
+                element.classList.remove('ausgewaehlt');
+                aktualisiereZaehler();
+                aktualisiereAktuelleAuswahl();
+                return;
+            }
+
+            if (startDatum === null) {
+                startDatum = datum;
+                element.classList.add('start-datum');
+                aktualisiereHinweis();
+                return;
+            }
+
+            if (startDatum !== null) {
+                waehleZeitraum(startDatum, datum);
+                startDatum = null;
+                aktualisiereHinweis();
+                zeichneKalender();
+                aktualisiereZaehler();
+                aktualisiereAktuelleAuswahl();
+            }
+        }
+
+        function alleZuruecksetzen() {
+            ausgewaehlteTage = [];
+            startDatum = null;
+            aktualisiereHinweis();
+            zeichneKalender();
+            aktualisiereZaehler();
+            aktualisiereAktuelleAuswahl();
+        }
+
+        function vorherigerMonat() {
+            aktuellerMonat--;
+            if (aktuellerMonat < 0) {
+                aktuellerMonat = 11;
+                aktuellesJahr--;
+            }
+            zeichneKalender();
+        }
+
+        function naechsterMonat() {
+            aktuellerMonat++;
+            if (aktuellerMonat > 11) {
+                aktuellerMonat = 0;
+                aktuellesJahr++;
+            }
+            zeichneKalender();
+        }
+
+        function speichern() {
+            const meldung = document.getElementById('kalender-meldung');
+            
+            fetch('/api/verfuegbarkeit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: eingeloggterNutzer.name,
+                    verfuegbarkeit: ausgewaehlteTage
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.erfolg) {
+                    meldung.textContent = '✅ Gespeichert! ' + ausgewaehlteTage.length + ' Tage';
+                    meldung.className = 'meldung sichtbar erfolg';
+                    aktualisiereAktuelleAuswahl();
+                } else {
+                    meldung.textContent = '❌ ' + data.fehler;
+                    meldung.className = 'meldung sichtbar fehler';
+                }
+            })
+            .catch(() => {
+                meldung.textContent = '❌ Verbindungsfehler!';
+                meldung.className = 'meldung sichtbar fehler';
+            });
+        }
+
+        // ===== SEITE STARTET HIER =====
+        zeichneKalender();
+        pruefeLogin(); // Prüfen ob Nutzer schon eingeloggt war
+    </script>
+</body>
+</html>

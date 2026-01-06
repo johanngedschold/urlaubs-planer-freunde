@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Urlaubs-Planer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .warnung {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .warnung strong {
+            color: #e65100;
+        }
+
+        .navigation {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .navigation a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+
+        .navigation a:hover {
+            background: #45a049;
+        }
+
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .box h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 2px;
+        }
+
+        .button-reset {
+            background: #FF9800;
+            color: white;
+        }
+
+        .button-reset:hover {
+            background: #F57C00;
+        }
+
+        .button-delete {
+            background: #f44336;
+            color: white;
+        }
+
+        .button-delete:hover {
+            background: #d32f2f;
+        }
+
+        .button-danger {
+            width: 100%;
+            padding: 15px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .button-danger:hover {
+            background: #d32f2f;
+        }
+
+        .keine-daten {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+        }
+
+        .meldung {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .meldung.sichtbar {
+            display: block;
+        }
+
+        .meldung.erfolg {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .meldung.fehler {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.sichtbar {
+            display: flex;
+        }
+
+        .modal-inhalt {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .modal-inhalt h3 {
+            margin-top: 0;
+        }
+
+        .modal-inhalt input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .button-abbrechen {
+            background: #eee;
+            color: #333;
+        }
+
+        .button-bestaetigen {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .refresh-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .refresh-button:hover {
+            background: #1976D2;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .stat-box {
+            flex: 1;
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .stat-box .zahl {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1976D2;
+        }
+
+        .stat-box .label {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>👑 Admin-Bereich</h1>
+
+    <div class="warnung">
+        <strong>⚠️ Achtung:</strong> Diese Seite ist nur für Entwickler gedacht. 
+        In der Live-Version sollte sie geschützt oder entfernt werden.
+    </div>
+
+    <div class="navigation">
+        <a href="/">← Zur Eingabe</a>
+        <a href="/uebersicht.html">📊 Übersicht</a>
+    </div>
+
+    <div class="box">
+        <h2>📊 Statistiken</h2>
+        <div class="stats">
+            <div class="stat-box">
+                <div class="zahl" id="anzahl-nutzer">0</div>
+                <div class="label">Nutzer</div>
+            </div>
+            <div class="stat-box">
+                <div class="zahl" id="anzahl-tage">0</div>
+                <div class="label">Eingetragene Tage</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <h2>👥 Nutzer verwalten</h2>
+        <div class="meldung" id="meldung"></div>
+        
+        <table id="nutzer-tabelle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Tage</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody id="nutzer-liste">
+                <tr>
+                    <td colspan="3" class="keine-daten">Lade Daten...</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button class="refresh-button" onclick="ladeDaten()">🔄 Aktualisieren</button>
+    </div>
+
+    <div class="box">
+        <h2>💣 Gefahrenzone</h2>
+        <p style="color: #666; font-size: 14px;">
+            Diese Aktion löscht ALLE Nutzer und deren Daten. Nicht rückgängig machbar!
+        </p>
+        <button class="button-danger" onclick="zeigeAlleLoeschenModal()">
+            🗑️ Alle Daten löschen
+        </button>
+    </div>
+
+    <!-- Modal: Passwort zurücksetzen -->
+    <div class="modal" id="passwort-modal">
+        <div class="modal-inhalt">
+            <h3>🔑 Passwort zurücksetzen</h3>
+            <p>Neues Passwort für <strong id="reset-name"></strong>:</p>
+            <input type="password" id="neues-passwort" placeholder="Neues Passwort (min. 4 Zeichen)">
+            <div class="modal-buttons">
+                <button class="button-abbrechen" onclick="schliesseModal('passwort-modal')">Abbrechen</button>
+                <button class="button-bestaetigen" onclick="passwortZuruecksetzen()">Speichern</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Nutzer löschen -->
+    <div class="modal" id="loeschen-modal">
+        <div class="modal-inhalt">
+            <h3>🗑️ Nutzer löschen</h3>
+            <p>Willst du <strong id="loeschen-name"></strong> wirklich löschen?</p>
+            <p style="color: #f44336; font-size: 14px;">Diese Aktion kann nicht rückgängig gemacht werden!</p>
+            <div class="modal-buttons">
+                <button class="button-abbrechen" onclick="schliesseModal('loeschen-modal')">Abbrechen</button>
+                <button class="button-delete" onclick="nutzerLoeschen()">Löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Alle löschen -->
+    <div class="modal" id="alle-loeschen-modal">
+        <div class="modal-inhalt">
+            <h3>💣 Alle Daten löschen</h3>
+            <p>Willst du wirklich ALLE Nutzer und Daten löschen?</p>
+            <p style="color: #f44336; font-size: 14px;">Diese Aktion kann nicht rückgängig gemacht werden!</p>
+            <div class="modal-buttons">
+                <button class="button-abbrechen" onclick="schliesseModal('alle-loeschen-modal')">Abbrechen</button>
+                <button class="button-delete" onclick="alleLoeschen()">Alles löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let aktuellerNutzer = null;
+
+        function zeigeMeldung(text, istFehler) {
+            const meldung = document.getElementById('meldung');
+            meldung.textContent = text;
+            meldung.className = 'meldung sichtbar ' + (istFehler ? 'fehler' : 'erfolg');
+            setTimeout(() => {
+                meldung.className = 'meldung';
+            }, 3000);
+        }
+
+        function schliesseModal(id) {
+            document.getElementById(id).classList.remove('sichtbar');
+        }
+
+        // Daten laden
+        function ladeDaten() {
+            fetch('/api/admin/nutzer')
+                .then(res => res.json())
+                .then(nutzer => {
+                    const liste = document.getElementById('nutzer-liste');
+                    const anzahlNutzer = document.getElementById('anzahl-nutzer');
+                    const anzahlTage = document.getElementById('anzahl-tage');
+
+                    // Statistiken
+                    anzahlNutzer.textContent = nutzer.length;
+                    const gesamtTage = nutzer.reduce((sum, n) => sum + (n.anzahlTage || 0), 0);
+                    anzahlTage.textContent = gesamtTage;
+
+                    if (nutzer.length === 0) {
+                        liste.innerHTML = '<tr><td colspan="3" class="keine-daten">Noch keine Nutzer vorhanden</td></tr>';
+                        return;
+                    }
+
+                    liste.innerHTML = nutzer.map(n => 
+                        '<tr>' +
+                            '<td><strong>' + n.name + '</strong></td>' +
+                            '<td>' + (n.anzahlTage || 0) + ' Tage</td>' +
+                            '<td>' +
+                                '<button class="button button-reset" onclick="zeigePasswortModal(\'' + n.name + '\')">🔑</button>' +
+                                '<button class="button button-delete" onclick="zeigeLoeschenModal(\'' + n.name + '\')">🗑️</button>' +
+                            '</td>' +
+                        '</tr>'
+                    ).join('');
+                })
+                .catch(error => {
+                    console.error('Fehler:', error);
+                });
+        }
+
+        // Passwort zurücksetzen
+        function zeigePasswortModal(name) {
+            aktuellerNutzer = name;
+            document.getElementById('reset-name').textContent = name;
+            document.getElementById('neues-passwort').value = '';
+            document.getElementById('passwort-modal').classList.add('sichtbar');
+        }
+
+        function passwortZuruecksetzen() {
+            const neuesPasswort = document.getElementById('neues-passwort').value;
+
+            if (neuesPasswort.length < 4) {
+                alert('Passwort muss mindestens 4 Zeichen haben!');
+                return;
+            }
+
+            fetch('/api/admin/reset-passwort', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: aktuellerNutzer, neuesPasswort })
+            })
+            .then(res => res.json())
+            .then(data => {
+                schliesseModal('passwort-modal');
+                if (data.erfolg) {
+                    zeigeMeldung('✅ Passwort für ' + aktuellerNutzer + ' zurückgesetzt!', false);
+                } else {
+                    zeigeMeldung('❌ ' + data.fehler, true);
+                }
+            });
+        }
+
+        // Nutzer löschen
+        function zeigeLoeschenModal(name) {
+            aktuellerNutzer = name;
+            document.getElementById('loeschen-name').textContent = name;
+            document.getElementById('loeschen-modal').classList.add('sichtbar');
+        }
+
+        function nutzerLoeschen() {
+            fetch('/api/admin/nutzer/' + encodeURIComponent(aktuellerNutzer), {
+                method: 'DELETE'
+            })
+            .then(res => res.json())
+            .then(data => {
+                schliesseModal('loeschen-modal');
+                if (data.erfolg) {
+                    zeigeMeldung('✅ ' + aktuellerNutzer + ' wurde gelöscht!', false);
+                    ladeDaten();
+                } else {
+                    zeigeMeldung('❌ ' + data.fehler, true);
+                }
+            });
+        }
+
+        // Alle löschen
+        function zeigeAlleLoeschenModal() {
+            document.getElementById('alle-loeschen-modal').classList.add('sichtbar');
+        }
+
+        function alleLoeschen() {
+            fetch('/api/admin/alle-loeschen', {
+                method: 'DELETE'
+            })
+            .then(res => res.json())
+            .then(data => {
+                schliesseModal('alle-loeschen-modal');
+                if (data.erfolg) {
+                    zeigeMeldung('✅ Alle Daten wurden gelöscht!', false);
+                    ladeDaten();
+                } else {
+                    zeigeMeldung('❌ ' + data.fehler, true);
+                }
+            });
+        }
+
+        // Beim Laden
+        ladeDaten();
+    </script>
+</body>
+</html>

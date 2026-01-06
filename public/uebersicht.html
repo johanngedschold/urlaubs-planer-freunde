@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Übersicht - Urlaubs-Planer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .navigation {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .navigation a {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+
+        .navigation a:hover {
+            background: #45a049;
+        }
+
+        .box {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .box h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+
+        /* Beste Zeiträume */
+        .beste-zeitraeume {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .beste-zeitraeume li {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .beste-zeitraeume li:nth-child(1) {
+            background: linear-gradient(135deg, #fff9c4, #ffecb3);
+            border-left: 5px solid #fbc02d;
+        }
+
+        .beste-zeitraeume li:nth-child(2) {
+            background: linear-gradient(135deg, #f5f5f5, #eeeeee);
+            border-left: 5px solid #9e9e9e;
+        }
+
+        .beste-zeitraeume li:nth-child(3) {
+            background: linear-gradient(135deg, #ffe0b2, #ffcc80);
+            border-left: 5px solid #ff9800;
+        }
+
+        .beste-zeitraeume li:nth-child(n+4) {
+            background: #fafafa;
+            border-left: 5px solid #ddd;
+        }
+
+        .zeitraum-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .zeitraum-datum {
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .zeitraum-dauer {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .zeitraum-personen {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .anzahl {
+            background: #4CAF50;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        /* Kalender Visualisierung */
+        .kalender-visual {
+            overflow-x: auto;
+        }
+
+        .kalender-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .kalender-header button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .kalender-header button:hover {
+            background: #45a049;
+        }
+
+        .kalender-grid {
+            min-width: 100%;
+        }
+
+        .tage-header {
+            display: grid;
+            grid-template-columns: 100px repeat(var(--tage-anzahl), 1fr);
+            gap: 2px;
+            margin-bottom: 5px;
+        }
+
+        .tage-header span {
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            padding: 5px 2px;
+        }
+
+        .tage-header .name-header {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .wochentag {
+            font-size: 10px;
+            color: #999;
+            display: block;
+        }
+
+        .nutzer-zeile {
+            display: grid;
+            grid-template-columns: 100px repeat(var(--tage-anzahl), 1fr);
+            gap: 2px;
+            margin-bottom: 3px;
+            align-items: center;
+        }
+
+        .nutzer-name-cell {
+            font-size: 13px;
+            font-weight: bold;
+            color: #333;
+            padding-right: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .tag-cell {
+            height: 25px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+
+        .tag-cell.verfuegbar {
+            opacity: 0.9;
+        }
+
+        .tag-cell.nicht-verfuegbar {
+            background: #f5f5f5;
+        }
+
+        .tag-cell.wochenende {
+            background: #eeeeee;
+        }
+
+        /* Legende */
+        .legende {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+
+        .legende-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 13px;
+        }
+
+        .legende-farbe {
+            width: 20px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Nutzer Liste */
+        .nutzer-liste {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nutzer-liste li {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nutzer-liste li:last-child {
+            border-bottom: none;
+        }
+
+        .nutzer-farbe {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+        }
+
+        .nutzer-details {
+            flex: 1;
+        }
+
+        .nutzer-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 15px;
+        }
+
+        .nutzer-tage {
+            color: #666;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .keine-daten {
+            text-align: center;
+            color: #999;
+            padding: 30px;
+        }
+
+        .refresh-button {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .refresh-button:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+
+<!-- Subtiler Admin-Link im Footer -->
+<div style="text-align: center; margin-top: 50px; padding: 20px; border-top: 1px solid #eee;">
+    <a href="/admin" style="color: #999; font-size: 12px; text-decoration: none; opacity: 0.7;" title="Admin">⚙️ Admin</a>
+</div>
+
+<body>
+    <h1>📊 Übersicht</h1>
+
+    <div class="navigation">
+        <a href="/">← Zurück zur Eingabe</a>
+    </div>
+
+    <div class="box">
+        <h2>🏆 Beste Zeiträume</h2>
+        <ul class="beste-zeitraeume" id="beste-zeitraeume">
+            <li class="keine-daten">Lade Daten...</li>
+        </ul>
+    </div>
+
+    <div class="box">
+        <h2>📅 Kalender-Übersicht</h2>
+        <div class="kalender-header">
+            <button onclick="vorherigerMonat()">← Zurück</button>
+            <span id="monat-anzeige">Januar 2026</span>
+            <button onclick="naechsterMonat()">Weiter →</button>
+        </div>
+        <div class="kalender-visual" id="kalender-visual">
+            <div class="keine-daten">Lade Daten...</div>
+        </div>
+        <div class="legende" id="legende"></div>
+    </div>
+
+    <div class="box">
+        <h2>👥 Wer kann wann?</h2>
+        <ul class="nutzer-liste" id="nutzer-liste">
+            <li class="keine-daten">Lade Daten...</li>
+        </ul>
+        <button class="refresh-button" onclick="ladeDaten()">🔄 Aktualisieren</button>
+    </div>
+
+    <script>
+        let aktuellerMonat = new Date().getMonth();
+        let aktuellesJahr = new Date().getFullYear();
+        let nutzerDaten = [];
+
+        // Farben für verschiedene Nutzer
+        const farben = [
+            '#4CAF50', '#2196F3', '#FF9800', '#E91E63', '#9C27B0',
+            '#00BCD4', '#FF5722', '#795548', '#607D8B', '#3F51B5'
+        ];
+
+        const monate = [
+            'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+            'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+        ];
+
+        const wochentage = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+        // Datum formatieren
+        function formatiereDatum(datumString) {
+            const datum = new Date(datumString);
+            return datum.getDate() + '.' + (datum.getMonth() + 1) + '.';
+        }
+
+        function formatiereDatumLang(datumString) {
+            const datum = new Date(datumString);
+            return datum.getDate() + '.' + (datum.getMonth() + 1) + '.' + datum.getFullYear();
+        }
+
+        // Zeiträume zusammenfassen
+        function fasseZeitraeumeZusammen(tage) {
+            if (!tage || tage.length === 0) return 'Keine Tage ausgewählt';
+            
+            const sortiert = [...tage].sort();
+            const bereiche = [];
+            let start = sortiert[0];
+            let ende = sortiert[0];
+            
+            for (let i = 1; i < sortiert.length; i++) {
+                const aktuell = new Date(sortiert[i]);
+                const vorher = new Date(sortiert[i - 1]);
+                const differenz = (aktuell - vorher) / (1000 * 60 * 60 * 24);
+                
+                if (differenz === 1) {
+                    ende = sortiert[i];
+                } else {
+                    bereiche.push(start === ende ? formatiereDatumLang(start) : formatiereDatumLang(start) + ' - ' + formatiereDatumLang(ende));
+                    start = sortiert[i];
+                    ende = sortiert[i];
+                }
+            }
+            
+            bereiche.push(start === ende ? formatiereDatumLang(start) : formatiereDatumLang(start) + ' - ' + formatiereDatumLang(ende));
+            return bereiche.join(', ');
+        }
+
+        // Beste gemeinsame Zeiträume finden
+        function findeBestZeitraeume(nutzer) {
+            if (nutzer.length === 0) return [];
+
+            // Alle Tage sammeln und zählen
+            const tagZaehler = {};
+            const tagNutzer = {};
+            
+            nutzer.forEach(n => {
+                if (n.verfuegbarkeit) {
+                    n.verfuegbarkeit.forEach(tag => {
+                        tagZaehler[tag] = (tagZaehler[tag] || 0) + 1;
+                        if (!tagNutzer[tag]) tagNutzer[tag] = [];
+                        tagNutzer[tag].push(n.name);
+                    });
+                }
+            });
+
+            // Nur Tage wo mindestens 2 Personen können (oder alle wenn nur 1 Person)
+            const minPersonen = nutzer.length === 1 ? 1 : 2;
+            const relevanteTage = Object.keys(tagZaehler)
+                .filter(tag => tagZaehler[tag] >= minPersonen)
+                .sort();
+
+            if (relevanteTage.length === 0) return [];
+
+            // Zusammenhängende Zeiträume finden
+            const zeitraeume = [];
+            let i = 0;
+
+            while (i < relevanteTage.length) {
+                const startTag = relevanteTage[i];
+                let endTag = startTag;
+                let minAnzahl = tagZaehler[startTag];
+
+                // Zeitraum erweitern solange aufeinanderfolgende Tage
+                while (i + 1 < relevanteTage.length) {
+                    const aktuell = new Date(relevanteTage[i]);
+                    const naechster = new Date(relevanteTage[i + 1]);
+                    const differenz = (naechster - aktuell) / (1000 * 60 * 60 * 24);
+
+                    if (differenz === 1) {
+                        i++;
+                        endTag = relevanteTage[i];
+                        minAnzahl = Math.min(minAnzahl, tagZaehler[endTag]);
+                    } else {
+                        break;
+                    }
+                }
+
+                // Anzahl Tage berechnen
+                const startDate = new Date(startTag);
+                const endDate = new Date(endTag);
+                const anzahlTage = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+
+                // Wer kann in diesem gesamten Zeitraum?
+                const personenImZeitraum = nutzer.filter(n => {
+                    if (!n.verfuegbarkeit) return false;
+                    const aktuellesDatum = new Date(startTag);
+                    while (aktuellesDatum <= endDate) {
+                        const datumStr = aktuellesDatum.getFullYear() + '-' +
+                            String(aktuellesDatum.getMonth() + 1).padStart(2, '0') + '-' +
+                            String(aktuellesDatum.getDate()).padStart(2, '0');
+                        if (!n.verfuegbarkeit.includes(datumStr)) return false;
+                        aktuellesDatum.setDate(aktuellesDatum.getDate() + 1);
+                    }
+                    return true;
+                }).map(n => n.name);
+
+                zeitraeume.push({
+                    start: startTag,
+                    ende: endTag,
+                    anzahlTage: anzahlTage,
+                    anzahlPersonen: personenImZeitraum.length,
+                    personen: personenImZeitraum
+                });
+
+                i++;
+            }
+
+            // Sortieren: Erst nach Anzahl Personen, dann nach Länge des Zeitraums
+            return zeitraeume
+                .filter(z => z.anzahlPersonen > 0)
+                .sort((a, b) => {
+                    if (b.anzahlPersonen !== a.anzahlPersonen) {
+                        return b.anzahlPersonen - a.anzahlPersonen;
+                    }
+                    return b.anzahlTage - a.anzahlTage;
+                })
+                .slice(0, 5);
+        }
+
+        // Kalender zeichnen
+        function zeichneKalender() {
+            const container = document.getElementById('kalender-visual');
+            const legendeContainer = document.getElementById('legende');
+            const anzeige = document.getElementById('monat-anzeige');
+
+            anzeige.textContent = monate[aktuellerMonat] + ' ' + aktuellesJahr;
+
+            if (nutzerDaten.length === 0) {
+                container.innerHTML = '<div class="keine-daten">Noch keine Daten vorhanden</div>';
+                legendeContainer.innerHTML = '';
+                return;
+            }
+
+            const anzahlTage = new Date(aktuellesJahr, aktuellerMonat + 1, 0).getDate();
+
+            // CSS Variable setzen
+            container.style.setProperty('--tage-anzahl', anzahlTage);
+
+            // Header mit Tagen
+            let html = '<div class="kalender-grid">';
+            html += '<div class="tage-header" style="display: grid; grid-template-columns: 100px repeat(' + anzahlTage + ', 1fr);">';
+            html += '<span class="name-header">Name</span>';
+
+            for (let tag = 1; tag <= anzahlTage; tag++) {
+                const datum = new Date(aktuellesJahr, aktuellerMonat, tag);
+                const wt = wochentage[datum.getDay()];
+                html += '<span><span class="wochentag">' + wt + '</span>' + tag + '</span>';
+            }
+            html += '</div>';
+
+            // Zeile pro Nutzer
+            nutzerDaten.forEach((nutzer, index) => {
+                const farbe = farben[index % farben.length];
+                html += '<div class="nutzer-zeile" style="display: grid; grid-template-columns: 100px repeat(' + anzahlTage + ', 1fr);">';
+                html += '<span class="nutzer-name-cell">' + nutzer.name + '</span>';
+
+                for (let tag = 1; tag <= anzahlTage; tag++) {
+                    const datumString = aktuellesJahr + '-' +
+                        String(aktuellerMonat + 1).padStart(2, '0') + '-' +
+                        String(tag).padStart(2, '0');
+                    
+                    const datum = new Date(aktuellesJahr, aktuellerMonat, tag);
+                    const istWochenende = datum.getDay() === 0 || datum.getDay() === 6;
+                    
+                    const istVerfuegbar = nutzer.verfuegbarkeit && nutzer.verfuegbarkeit.includes(datumString);
+
+                    if (istVerfuegbar) {
+                        html += '<div class="tag-cell verfuegbar" style="background-color: ' + farbe + ';"></div>';
+                    } else if (istWochenende) {
+                        html += '<div class="tag-cell wochenende"></div>';
+                    } else {
+                        html += '<div class="tag-cell nicht-verfuegbar"></div>';
+                    }
+                }
+
+                html += '</div>';
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+
+            // Legende
+            legendeContainer.innerHTML = nutzerDaten.map((nutzer, index) => {
+                const farbe = farben[index % farben.length];
+                return '<div class="legende-item">' +
+                    '<div class="legende-farbe" style="background-color: ' + farbe + ';"></div>' +
+                    '<span>' + nutzer.name + '</span>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function vorherigerMonat() {
+            aktuellerMonat--;
+            if (aktuellerMonat < 0) {
+                aktuellerMonat = 11;
+                aktuellesJahr--;
+            }
+            zeichneKalender();
+        }
+
+        function naechsterMonat() {
+            aktuellerMonat++;
+            if (aktuellerMonat > 11) {
+                aktuellerMonat = 0;
+                aktuellesJahr++;
+            }
+            zeichneKalender();
+        }
+
+        // Daten laden
+        function ladeDaten() {
+            fetch('/nutzer')
+                .then(response => response.json())
+                .then(nutzer => {
+                    nutzerDaten = nutzer;
+
+                    const besteZeitraeumeContainer = document.getElementById('beste-zeitraeume');
+                    const nutzerListeContainer = document.getElementById('nutzer-liste');
+
+                    if (nutzer.length === 0) {
+                        besteZeitraeumeContainer.innerHTML = '<li class="keine-daten">Noch keine Daten vorhanden</li>';
+                        nutzerListeContainer.innerHTML = '<li class="keine-daten">Noch niemand hat seine Verfügbarkeit eingetragen</li>';
+                        zeichneKalender();
+                        return;
+                    }
+
+                    // Beste Zeiträume anzeigen
+                    const besteZeitraeume = findeBestZeitraeume(nutzer);
+                    if (besteZeitraeume.length === 0) {
+                        besteZeitraeumeContainer.innerHTML = '<li class="keine-daten">Keine gemeinsamen Zeiträume gefunden</li>';
+                    } else {
+                        const medaillen = ['🥇', '🥈', '🥉', '4.', '5.'];
+                        besteZeitraeumeContainer.innerHTML = besteZeitraeume.map((z, index) => {
+                            const datumText = z.start === z.ende
+                                ? formatiereDatumLang(z.start)
+                                : formatiereDatumLang(z.start) + ' - ' + formatiereDatumLang(z.ende);
+                            
+                            return '<li>' +
+                                '<div class="zeitraum-info">' +
+                                    '<span class="zeitraum-datum">' + medaillen[index] + ' ' + datumText + '</span>' +
+                                    '<span class="zeitraum-dauer">' + z.anzahlTage + ' Tag' + (z.anzahlTage > 1 ? 'e' : '') + '</span>' +
+                                    '<span class="zeitraum-personen">👥 ' + z.personen.join(', ') + '</span>' +
+                                '</div>' +
+                                '<span class="anzahl">' + z.anzahlPersonen + '/' + nutzer.length + '</span>' +
+                            '</li>';
+                        }).join('');
+                    }
+
+                    // Nutzer-Liste
+                    nutzerListeContainer.innerHTML = nutzer.map((n, index) => {
+                        const farbe = farben[index % farben.length];
+                        return '<li>' +
+                            '<div class="nutzer-farbe" style="background-color: ' + farbe + ';"></div>' +
+                            '<div class="nutzer-details">' +
+                                '<div class="nutzer-name">' + n.name + '</div>' +
+                                '<div class="nutzer-tage">' + fasseZeitraeumeZusammen(n.verfuegbarkeit) + '</div>' +
+                            '</div>' +
+                        '</li>';
+                    }).join('');
+
+                    // Kalender zeichnen
+                    zeichneKalender();
+                })
+                .catch(error => {
+                    console.error('Fehler:', error);
+                });
+        }
+
+        ladeDaten();
+    </script>
+</body>
+</html>
