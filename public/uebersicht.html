@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -303,11 +304,6 @@
     </style>
 </head>
 
-<!-- Subtiler Admin-Link im Footer -->
-<div style="text-align: center; margin-top: 50px; padding: 20px; border-top: 1px solid #eee;">
-    <a href="/admin" style="color: #999; font-size: 12px; text-decoration: none; opacity: 0.7;" title="Admin">⚙️ Admin</a>
-</div>
-
 <body>
     <h1>📊 Übersicht</h1>
 
@@ -341,6 +337,11 @@
             <li class="keine-daten">Lade Daten...</li>
         </ul>
         <button class="refresh-button" onclick="ladeDaten()">🔄 Aktualisieren</button>
+    </div>
+
+    <!-- Subtiler Admin-Link im Footer -->
+    <div style="text-align: center; margin-top: 50px; padding: 20px; border-top: 1px solid #eee;">
+        <a href="/admin" style="color: #999; font-size: 12px; text-decoration: none; opacity: 0.7;" title="Admin">⚙️ Admin</a>
     </div>
 
     <script>
@@ -399,16 +400,19 @@
             return bereiche.join(', ');
         }
 
-        // Beste gemeinsame Zeiträume finden
+        // NEUE VERBESSERTE FUNKTION: Beste gemeinsame Zeiträume finden
         function findeBestZeitraeume(nutzer) {
             if (nutzer.length === 0) return [];
+
+            console.log('🔍 Starte Zeitraum-Analyse mit', nutzer.length, 'Nutzern');
 
             // Alle Tage sammeln und zählen
             const tagZaehler = {};
             const tagNutzer = {};
             
             nutzer.forEach(n => {
-                if (n.verfuegbarkeit) {
+                console.log('Nutzer:', n.name, 'Verfügbarkeit:', n.verfuegbarkeit ? n.verfuegbarkeit.length : 0, 'Tage');
+                if (n.verfuegbarkeit && Array.isArray(n.verfuegbarkeit)) {
                     n.verfuegbarkeit.forEach(tag => {
                         tagZaehler[tag] = (tagZaehler[tag] || 0) + 1;
                         if (!tagNutzer[tag]) tagNutzer[tag] = [];
@@ -417,78 +421,110 @@
                 }
             });
 
-            // Nur Tage wo mindestens 2 Personen können (oder alle wenn nur 1 Person)
-            const minPersonen = nutzer.length === 1 ? 1 : 2;
-            const relevanteTage = Object.keys(tagZaehler)
-                .filter(tag => tagZaehler[tag] >= minPersonen)
-                .sort();
+            console.log('Gefundene Tage insgesamt:', Object.keys(tagZaehler).length);
 
-            if (relevanteTage.length === 0) return [];
-
-            // Zusammenhängende Zeiträume finden
-            const zeitraeume = [];
-            let i = 0;
-
-            while (i < relevanteTage.length) {
-                const startTag = relevanteTage[i];
-                let endTag = startTag;
-                let minAnzahl = tagZaehler[startTag];
-
-                // Zeitraum erweitern solange aufeinanderfolgende Tage
-                while (i + 1 < relevanteTage.length) {
-                    const aktuell = new Date(relevanteTage[i]);
-                    const naechster = new Date(relevanteTage[i + 1]);
-                    const differenz = (naechster - aktuell) / (1000 * 60 * 60 * 24);
-
-                    if (differenz === 1) {
-                        i++;
-                        endTag = relevanteTage[i];
-                        minAnzahl = Math.min(minAnzahl, tagZaehler[endTag]);
-                    } else {
-                        break;
-                    }
-                }
-
-                // Anzahl Tage berechnen
-                const startDate = new Date(startTag);
-                const endDate = new Date(endTag);
-                const anzahlTage = Math.round((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-
-                // Wer kann in diesem gesamten Zeitraum?
-                const personenImZeitraum = nutzer.filter(n => {
-                    if (!n.verfuegbarkeit) return false;
-                    const aktuellesDatum = new Date(startTag);
-                    while (aktuellesDatum <= endDate) {
-                        const datumStr = aktuellesDatum.getFullYear() + '-' +
-                            String(aktuellesDatum.getMonth() + 1).padStart(2, '0') + '-' +
-                            String(aktuellesDatum.getDate()).padStart(2, '0');
-                        if (!n.verfuegbarkeit.includes(datumStr)) return false;
-                        aktuellesDatum.setDate(aktuellesDatum.getDate() + 1);
-                    }
-                    return true;
-                }).map(n => n.name);
-
-                zeitraeume.push({
-                    start: startTag,
-                    ende: endTag,
-                    anzahlTage: anzahlTage,
-                    anzahlPersonen: personenImZeitraum.length,
-                    personen: personenImZeitraum
-                });
-
-                i++;
+            // Nach Datum sortieren
+            const alleTage = Object.keys(tagZaehler).sort();
+            
+            if (alleTage.length === 0) {
+                console.log('❌ Keine Verfügbarkeiten gefunden!');
+                return [];
             }
 
-            // Sortieren: Erst nach Anzahl Personen, dann nach Länge des Zeitraums
-            return zeitraeume
-                .filter(z => z.anzahlPersonen > 0)
-                .sort((a, b) => {
-                    if (b.anzahlPersonen !== a.anzahlPersonen) {
-                        return b.anzahlPersonen - a.anzahlPersonen;
+            const zeitraeume = [];
+            let aktuellerZeitraum = null;
+
+            alleTage.forEach((tag, index) => {
+                const datum = new Date(tag);
+                const anzahlNutzer = tagZaehler[tag];
+                const nutzerListe = tagNutzer[tag];
+
+                if (!aktuellerZeitraum) {
+                    // Neuen Zeitraum starten
+                    aktuellerZeitraum = {
+                        start: tag,
+                        ende: tag,
+                        tage: [tag],
+                        minNutzer: anzahlNutzer,
+                        maxNutzer: anzahlNutzer,
+                        nutzerSets: [new Set(nutzerListe)],
+                        gemeinsameNutzer: new Set(nutzerListe)
+                    };
+                } else {
+                    const letztesDatum = new Date(aktuellerZeitraum.ende);
+                    const differenzTage = Math.round((datum - letztesDatum) / (1000 * 60 * 60 * 24));
+
+                    if (differenzTage === 1) {
+                        // Zeitraum erweitern
+                        aktuellerZeitraum.ende = tag;
+                        aktuellerZeitraum.tage.push(tag);
+                        aktuellerZeitraum.minNutzer = Math.min(aktuellerZeitraum.minNutzer, anzahlNutzer);
+                        aktuellerZeitraum.maxNutzer = Math.max(aktuellerZeitraum.maxNutzer, anzahlNutzer);
+                        
+                        // Gemeinsame Nutzer über ALLE Tage des Zeitraums berechnen
+                        const aktuelleNutzer = new Set(nutzerListe);
+                        aktuellerZeitraum.gemeinsameNutzer = new Set(
+                            [...aktuellerZeitraum.gemeinsameNutzer].filter(n => aktuelleNutzer.has(n))
+                        );
+                    } else {
+                        // Aktuellen Zeitraum abschließen
+                        const anzahlGemeinsam = aktuellerZeitraum.gemeinsameNutzer.size;
+                        
+                        if (anzahlGemeinsam > 0) {
+                            zeitraeume.push({
+                                start: aktuellerZeitraum.start,
+                                ende: aktuellerZeitraum.ende,
+                                anzahlTage: aktuellerZeitraum.tage.length,
+                                anzahlPersonen: anzahlGemeinsam,
+                                personen: Array.from(aktuellerZeitraum.gemeinsameNutzer),
+                                minNutzer: aktuellerZeitraum.minNutzer,
+                                maxNutzer: aktuellerZeitraum.maxNutzer
+                            });
+                        }
+                        
+                        // Neuen Zeitraum starten
+                        aktuellerZeitraum = {
+                            start: tag,
+                            ende: tag,
+                            tage: [tag],
+                            minNutzer: anzahlNutzer,
+                            maxNutzer: anzahlNutzer,
+                            gemeinsameNutzer: new Set(nutzerListe)
+                        };
                     }
-                    return b.anzahlTage - a.anzahlTage;
-                })
-                .slice(0, 5);
+                }
+            });
+
+            // Letzten Zeitraum abschließen
+            if (aktuellerZeitraum) {
+                const anzahlGemeinsam = aktuellerZeitraum.gemeinsameNutzer.size;
+                if (anzahlGemeinsam > 0) {
+                    zeitraeume.push({
+                        start: aktuellerZeitraum.start,
+                        ende: aktuellerZeitraum.ende,
+                        anzahlTage: aktuellerZeitraum.tage.length,
+                        anzahlPersonen: anzahlGemeinsam,
+                        personen: Array.from(aktuellerZeitraum.gemeinsameNutzer),
+                        minNutzer: aktuellerZeitraum.minNutzer,
+                        maxNutzer: aktuellerZeitraum.maxNutzer
+                    });
+                }
+            }
+
+            console.log('Gefundene Zeiträume:', zeitraeume.length);
+            zeitraeume.forEach((z, i) => {
+                console.log(`Zeitraum ${i+1}:`, z.start, '-', z.ende, '|', z.anzahlTage, 'Tage |', z.anzahlPersonen, 'Personen:', z.personen.join(', '));
+            });
+
+            // Sortieren: 
+            // 1. Priorität: Anzahl Personen (mehr ist besser)
+            // 2. Priorität: Länge des Zeitraums (länger ist besser)
+            return zeitraeume.sort((a, b) => {
+                if (b.anzahlPersonen !== a.anzahlPersonen) {
+                    return b.anzahlPersonen - a.anzahlPersonen;
+                }
+                return b.anzahlTage - a.anzahlTage;
+            }).slice(0, 10); // Top 10 Zeiträume
         }
 
         // Kalender zeichnen
@@ -603,7 +639,7 @@
                     if (besteZeitraeume.length === 0) {
                         besteZeitraeumeContainer.innerHTML = '<li class="keine-daten">Keine gemeinsamen Zeiträume gefunden</li>';
                     } else {
-                        const medaillen = ['🥇', '🥈', '🥉', '4.', '5.'];
+                        const medaillen = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.'];
                         besteZeitraeumeContainer.innerHTML = besteZeitraeume.map((z, index) => {
                             const datumText = z.start === z.ende
                                 ? formatiereDatumLang(z.start)
@@ -644,3 +680,4 @@
     </script>
 </body>
 </html>
+```
