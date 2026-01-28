@@ -93,6 +93,29 @@
             border-left: 5px solid #ddd;
         }
 
+        .beste-zeitraeume li.versteckt {
+            display: none;
+        }
+
+        .mehr-anzeigen-btn {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .mehr-anzeigen-btn:hover {
+            background: #e5e5e5;
+        }
+
         .zeitraum-info {
             display: flex;
             flex-direction: column;
@@ -580,6 +603,29 @@
             zeichneKalender();
         }
 
+        // Weitere Zeiträume ein-/ausblenden
+        function toggleWeitereZeitraeume(button) {
+            const container = document.getElementById('beste-zeitraeume');
+            const versteckteItems = container.querySelectorAll('.zeitraum-item.versteckt');
+            const sichtbareItems = container.querySelectorAll('.zeitraum-item:not(.versteckt)');
+
+            if (versteckteItems.length > 0) {
+                // Einblenden
+                versteckteItems.forEach(item => item.classList.remove('versteckt'));
+                button.textContent = '− Weniger anzeigen';
+            } else {
+                // Wieder ausblenden (alle ab Position 4)
+                const alleItems = container.querySelectorAll('.zeitraum-item');
+                alleItems.forEach((item, index) => {
+                    if (index >= 3) {
+                        item.classList.add('versteckt');
+                    }
+                });
+                const anzahlVersteckt = alleItems.length - 3;
+                button.textContent = '+ ' + anzahlVersteckt + ' weitere Zeiträume anzeigen';
+            }
+        }
+
         // Daten laden
         function ladeDaten() {
             fetch('/nutzer')
@@ -603,20 +649,30 @@
                         besteZeitraeumeContainer.innerHTML = '<li class="keine-daten">Keine gemeinsamen Zeiträume gefunden</li>';
                     } else {
                         const medaillen = ['🥇', '🥈', '🥉', '4.', '5.', '6.', '7.', '8.', '9.', '10.'];
-                        besteZeitraeumeContainer.innerHTML = besteZeitraeume.map((z, index) => {
+                        let html = besteZeitraeume.map((z, index) => {
                             const datumText = z.start === z.ende
                                 ? formatiereDatumLang(z.start)
                                 : formatiereDatumLang(z.start) + ' - ' + formatiereDatumLang(z.ende);
-                            
-                            return '<li>' +
+
+                            const verstecktClass = index >= 3 ? ' versteckt' : '';
+
+                            return '<li class="zeitraum-item' + verstecktClass + '">' +
                                 '<div class="zeitraum-info">' +
                                     '<span class="zeitraum-datum">' + medaillen[index] + ' ' + datumText + '</span>' +
                                     '<span class="zeitraum-dauer">' + z.anzahlTage + ' Tag' + (z.anzahlTage > 1 ? 'e' : '') + '</span>' +
-                                    '<span class="zeitraum-personen">👥 ' + z.personen.join(', ') + '</span>' +
+                                    '<span class="zeitraum-personen">' + z.personen.join(', ') + '</span>' +
                                 '</div>' +
                                 '<span class="anzahl">' + z.anzahlPersonen + '/' + nutzer.length + '</span>' +
                             '</li>';
                         }).join('');
+
+                        // Button zum Aufklappen hinzufügen, wenn mehr als 3 Zeiträume
+                        if (besteZeitraeume.length > 3) {
+                            html += '<button class="mehr-anzeigen-btn" onclick="toggleWeitereZeitraeume(this)">' +
+                                '+ ' + (besteZeitraeume.length - 3) + ' weitere Zeiträume anzeigen</button>';
+                        }
+
+                        besteZeitraeumeContainer.innerHTML = html;
                     }
 
                     // Nutzer-Liste
